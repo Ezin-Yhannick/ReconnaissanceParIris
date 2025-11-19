@@ -17,7 +17,7 @@ public interface IrisDonneesService {
     @param user l'utilisateur à enroler
     @param irisImage l'image de l'iris
     @return les données d'iris sauvegarder
-    @throws les exception en cas d'erreur de traitement
+    @throws les exceptions en cas d'erreur de traitement
      */
     DonneesIris enrollIris(Users user, File irisImage) throws Exception;
 

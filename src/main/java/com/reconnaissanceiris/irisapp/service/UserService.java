@@ -11,6 +11,8 @@ public interface UserService {
      */
     Users saveUsers(Users user);
     Optional<Users> findByEmail(String email);
+    Optional<Users> findById(Long id);
     List<Users> getAllUsers();
     void deleteUser(Long id);
+    boolean existsByEmail(String email);
 }
