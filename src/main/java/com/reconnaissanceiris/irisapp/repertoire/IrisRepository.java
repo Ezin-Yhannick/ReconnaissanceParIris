@@ -1,11 +1,15 @@
 package com.reconnaissanceiris.irisapp.repertoire;
 
 import com.reconnaissanceiris.irisapp.model.DonneesIris;
-import com.reconnaissanceiris.irisapp.model.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-
+@Repository
 public interface IrisRepository extends JpaRepository<DonneesIris, Long> {
-    Optional<DonneesIris> findByUser(Users user);
+
+    // Trouver l'iris d'un utilisateur par son ID
+    DonneesIris findByUserId(Long userId);
+
+    // Vérifier si un utilisateur a un iris enregistré
+    boolean existsByUserId(Long userId);
 }
