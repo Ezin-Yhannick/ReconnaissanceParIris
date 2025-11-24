@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 2. Autoriser l'accès sans authentification à votre route
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/iris/enroll", "/api/iris/compare").permitAll()
+                        .requestMatchers("/api/iris/enroll", "/api/iris/compare").hasRole("ADMIN")
                         // 3. Exiger l'authentification pour toutes les autres routes
                         .anyRequest().authenticated()
                 );
