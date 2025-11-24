@@ -12,4 +12,5 @@ public interface IrisRepository extends JpaRepository<DonneesIris, Long> {
 
     // Vérifier si un utilisateur a un iris enregistré
     boolean existsByUserId(Long userId);
+    boolean existsByCodeIris(String codeIris);
 }

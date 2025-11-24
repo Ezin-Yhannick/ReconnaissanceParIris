@@ -24,7 +24,7 @@ public class DonneesIris {
     @JsonIgnoreProperties("donneesIris")
     private Users user;
 
-    @Column(name = "code_iris", columnDefinition = "LONGTEXT")
+    @Column(name = "code_iris", columnDefinition = "LONGTEXT", unique = true)
     private String codeIris;
 
     @Column(name = "chemin_image")

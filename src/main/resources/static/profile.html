@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IrisAuth - Profil Administrateur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col" x-data="profileAdminPage()">
+    
+    <div id="header"></div>
+
+    <div class="flex flex-1">
+        <div id="sidebar"></div>
+
+        <main class="flex-1 p-6 max-w-[900px] mx-auto w-full">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Profil Administrateur</h2>
+            </div>
+
+            <div class="space-y-6">
+                
+                <!-- Profile Header Card -->
+                <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+                    <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6">
+                        <!-- Avatar -->
+                        <div class="relative">
+                            <div class="w-24 h-24 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center text-3xl font-bold border-4 border-white/30 shadow-xl">
+                                <span x-text="getInitials()"></span>
+                            </div>
+                        </div>
+
+                        <!-- User Info -->
+                        <div class="flex-1 text-center md:text-left">
+                            <h3 class="text-2xl font-bold mb-2" x-text="`${profile.prenom} ${profile.nom}`"></h3>
+                            <p class="text-white/90 mb-1 font-mono text-lg" x-text="'@' + profile.id"></p>
+                            <div class="flex flex-wrap gap-2 justify-center md:justify-start mt-3">
+                                <span class="px-4 py-1.5 rounded-full text-sm font-semibold bg-yellow-500/30 backdrop-blur-sm border border-white/30">
+                                    🛡️ Administrateur
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Stats and Logout -->
+                        <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                                    <p class="text-2xl font-bold" x-text="stats.totalUsers"></p>
+                                    <p class="text-xs text-white/70">Utilisateurs</p>
+                                </div>
+                                <div class="text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                                    <p class="text-2xl font-bold" x-text="stats.successRate + '%'"></p>
+                                    <p class="text-xs text-white/70">Taux de succès</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Logout Button -->
+                            <button 
+                                @click="logout"
+                                class="flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 rounded-lg transition-all font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                <span>Déconnexion</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Cards Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Personal Information -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            Informations personnelles
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Prénom</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="profile.prenom"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Nom</label>
+                                    <input 
+                                        type="text" 
+                                        x-model="profile.nom"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Date de prise de fonction</label>
+                                <input 
+                                    type="text" 
+                                    x-model="profile.startDate"
+                                    disabled
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                            </div>
+
+                            <div class="flex items-center justify-end space-x-3 pt-4">
+                                <button 
+                                    @click="resetProfile"
+                                    class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all font-semibold">
+                                    Annuler
+                                </button>
+                                <button 
+                                    @click="saveProfile"
+                                    class="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-xl transform hover:scale-105 transition-all font-semibold">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                                    </svg>
+                                    <span>Enregistrer</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Sécurité du compte
+                        </h4>
+                        
+                        <div class="space-y-4">
+                            <!-- Nouvel identifiant -->
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Nouvel identifiant</label>
+                                <input 
+                                    type="text"
+                                    x-model="security.newId"
+                                    placeholder="Laisser vide pour garder l'actuel"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                <p class="text-xs text-gray-500 mt-1">Identifiant actuel: <span class="font-mono font-semibold" x-text="profile.id"></span></p>
+                            </div>
+
+                            <!-- Mot de passe actuel -->
+                            <div>
+                                <label class="block text-gray-700 font-semibold mb-2">Mot de passe actuel <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input 
+                                        :type="showCurrentPassword ? 'text' : 'password'"
+                                        x-model="security.currentPassword"
+                                        placeholder="Requis pour toute modification"
+                                        class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    <button 
+                                        @click="showCurrentPassword = !showCurrentPassword"
+                                        type="button"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                        <svg x-show="!showCurrentPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        <svg x-show="showCurrentPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Grid 2 colonnes pour les nouveaux mots de passe -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Nouveau mot de passe</label>
+                                    <div class="relative">
+                                        <input 
+                                            :type="showNewPassword ? 'text' : 'password'"
+                                            x-model="security.newPassword"
+                                            placeholder="******"
+                                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                        <button 
+                                            @click="showNewPassword = !showNewPassword"
+                                            type="button"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                            <svg x-show="!showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <svg x-show="showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">Confirmer mot de passe</label>
+                                    <div class="relative">
+                                        <input 
+                                            :type="showConfirmPassword ? 'text' : 'password'"
+                                            x-model="security.confirmPassword"
+                                            placeholder="******"
+                                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                        <button 
+                                            @click="showConfirmPassword = !showConfirmPassword"
+                                            type="button"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                            <svg x-show="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <svg x-show="showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button 
+                                @click="updateCredentials"
+                                class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-xl transform hover:scale-105 transition-all font-semibold">
+                                Mettre à jour les identifiants
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer" class="mt-auto"></div>
+
+    <script src="assets/js/main.js"></script>
+    <script>
+        function profileAdminPage() {
+            return {
+                profile: {
+                    id: 'admin',
+                    nom: 'Admin',
+                    prenom: 'Super',
+                    startDate: '01 Janvier 2024'
+                },
+                stats: {
+                    totalUsers: 0,
+                    successRate: 0
+                },
+                security: {
+                    newId: '',
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                },
+                showCurrentPassword: false,
+                showNewPassword: false,
+                showConfirmPassword: false,
+                originalProfile: {},
+                
+                async init() {
+                    // ✅ VÉRIFICATION SIMPLIFIÉE - Ne vérifie QUE le rôle
+                    const userRole = localStorage.getItem('userRole');
+                    
+                    if (userRole !== 'admin') {
+                        console.error('❌ Non admin - redirection');
+                        IrisAuth.showNotification('⚠️ Accès réservé aux administrateurs', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                        return;
+                    }
+                    
+                    console.log('✅ Admin vérifié - chargement du profil');
+                    
+                    this.loadComponents();
+                    await this.loadAdminProfile();
+                    await this.loadStats();
+                    this.originalProfile = JSON.parse(JSON.stringify(this.profile));
+                },
+                
+                loadComponents() {
+                    fetch('components/header.html')
+                        .then(r => r.text())
+                        .then(html => {
+                            document.getElementById('header').innerHTML = html;
+                            // Masquer le bouton "Ajouter"
+                            const addBtn = document.querySelector('[data-add-button]');
+                            if (addBtn) addBtn.style.display = 'none';
+                        });
+
+                    fetch('components/footer.html')
+                        .then(r => r.text())
+                        .then(html => document.getElementById('footer').innerHTML = html);
+                },
+                
+                async loadAdminProfile() {
+                    try {
+                        console.log('📡 Chargement profil admin...');
+                        const data = await IrisAuth.apiGet('/admin/profile');
+                        
+                        console.log('✅ Réponse API:', data);
+                        
+                        if (data.status === 'success') {
+                            this.profile.id = data.admin_email || data.email || 'admin';
+                            this.profile.prenom = data.prenom || 'Super';
+                            this.profile.nom = data.nom || 'Admin';
+                            
+                            localStorage.setItem('adminId', this.profile.id);
+                            localStorage.setItem('adminFirstName', this.profile.prenom);
+                            localStorage.setItem('adminLastName', this.profile.nom);
+                            
+                            console.log('✅ Profil chargé:', this.profile);
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur chargement profil:', error);
+                        
+                        // Charger depuis localStorage
+                        this.profile.id = localStorage.getItem('adminId') || 'admin';
+                        this.profile.prenom = localStorage.getItem('adminFirstName') || 'Super';
+                        this.profile.nom = localStorage.getItem('adminLastName') || 'Admin';
+                        
+                        IrisAuth.showNotification('⚠️ Profil chargé depuis le cache', 'info');
+                    }
+                },  
+                
+                async loadStats() {
+                    try {
+                        const data = await IrisAuth.apiGet('/stats/dashboard');
+                        
+                        if (data.status === 'success') {
+                            this.stats.totalUsers = data.totalUsers || 0;
+                            this.stats.successRate = data.successRate || 0;
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur chargement stats:', error);
+                        this.stats.totalUsers = 0;
+                        this.stats.successRate = 0;
+                    }
+                },
+                
+                getInitials() {
+                    const first = this.profile.prenom?.charAt(0) || 'S';
+                    const last = this.profile.nom?.charAt(0) || 'A';
+                    return `${first}${last}`;
+                },
+                
+                async saveProfile() {
+                    if (!this.profile.prenom || !this.profile.nom) {
+                        IrisAuth.showNotification('⚠️ Le prénom et le nom sont requis', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const result = await IrisAuth.apiPut('/admin/profile', {
+                            prenom: this.profile.prenom,
+                            nom: this.profile.nom
+                        });
+                        
+                        if (result.success) {
+                            localStorage.setItem('adminFirstName', this.profile.prenom);
+                            localStorage.setItem('adminLastName', this.profile.nom);
+                            
+                            this.originalProfile = JSON.parse(JSON.stringify(this.profile));
+                            IrisAuth.showNotification('✅ Profil enregistré avec succès !', 'success');
+                        } else {
+                            IrisAuth.showNotification('❌ ' + (result.message || 'Erreur lors de la sauvegarde'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('❌ Erreur sauvegarde profil:', error);
+                        IrisAuth.showNotification('❌ Erreur lors de la sauvegarde du profil', 'error');
+                    }
+                },
+                
+                resetProfile() {
+                    this.profile = JSON.parse(JSON.stringify(this.originalProfile));
+                    IrisAuth.showNotification('↩️ Modifications annulées', 'info');
+                },
+                
+                async updateCredentials() {
+                    if (!this.security.currentPassword) {
+                        IrisAuth.showNotification('⚠️ Le mot de passe actuel est requis', 'error');
+                        return;
+                    }
+                    
+                    if (!this.security.newId && !this.security.newPassword) {
+                        IrisAuth.showNotification('⚠️ Spécifiez au moins un nouvel identifiant ou un nouveau mot de passe', 'error');
+                        return;
+                    }
+                    
+                    if (this.security.newPassword && this.security.newPassword !== this.security.confirmPassword) {
+                        IrisAuth.showNotification('❌ Les mots de passe ne correspondent pas', 'error');
+                        return;
+                    }
+                    
+                    if (this.security.newPassword && this.security.newPassword.length < 3) {
+                        IrisAuth.showNotification('❌ Le mot de passe doit contenir au moins 3 caractères', 'error');
+                        return;
+                    }
+                    
+                    if (this.security.newId && this.security.newId.length < 3) {
+                        IrisAuth.showNotification('❌ L\'identifiant doit contenir au moins 3 caractères', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        IrisAuth.showLoader('⏳ Mise à jour en cours...');
+                        
+                        const result = await IrisAuth.apiPut('/admin/update-credentials', {
+                            currentPassword: this.security.currentPassword,
+                            newEmail: this.security.newId || null,
+                            newPassword: this.security.newPassword || null
+                        });
+                        
+                        IrisAuth.hideLoader();
+                        
+                        if (result.success) {
+                            IrisAuth.showNotification('✅ Identifiants mis à jour !', 'success');
+                            
+                            if (this.security.newId) {
+                                this.profile.id = this.security.newId;
+                                localStorage.setItem('adminId', this.security.newId);
+                            }
+                            
+                            this.security.currentPassword = '';
+                            this.security.newId = '';
+                            this.security.newPassword = '';
+                            this.security.confirmPassword = '';
+                            
+                            setTimeout(() => {
+                                if (confirm('🔐 Identifiants modifiés. Reconnexion requise. Continuer ?')) {
+                                    localStorage.clear();
+                                    window.location.href = 'index.html';
+                                }
+                            }, 2000);
+                        } else {
+                            IrisAuth.showNotification('❌ ' + (result.message || 'Erreur'), 'error');
+                        }
+                    } catch (error) {
+                        IrisAuth.hideLoader();
+                        console.error('❌ Erreur:', error);
+                        IrisAuth.showNotification('❌ Erreur lors de la mise à jour', 'error');
+                    }
+                },
+                
+                logout() {
+                    if (confirm('🚪 Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                        localStorage.clear();
+                        window.location.href = 'index.html';
+                    }
+                }
+            }
+        }
+    </script>
+    <div id="add-user-modal"></div>
+    <script>
+        fetch('components/add-user-modal.html')
+            .then(r => r.text())
+            .then(html => document.getElementById('add-user-modal').innerHTML = html);
+    </script>
+</body>
+</html>

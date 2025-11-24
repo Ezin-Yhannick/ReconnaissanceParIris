@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IrisAuth - Mon Profil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col" x-data="profileUserPage()">
+    
+    <div id="header"></div>
+
+    <div class="flex flex-1">
+        <div id="sidebar"></div>
+
+        <main class="flex-1 p-6 flex items-center justify-center">
+            <div class="w-full max-w-5xl">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Mon profil</h2>
+                </div>
+
+                <div class="space-y-6">
+                    
+                    <!-- Profile Header Card -->
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                        <div class="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6">
+                            <!-- Avatar -->
+                            <div class="relative">
+                                <div class="w-24 h-24 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center text-3xl font-bold border-4 border-white/30 shadow-xl">
+                                    <span x-text="getInitials()"></span>
+                                </div>
+                            </div>
+
+                            <!-- User Info -->
+                            <div class="flex-1 text-center md:text-left">
+                                <h3 class="text-2xl font-bold mb-2" x-text="`${profile.prenom} ${profile.nom}`"></h3>
+                                <p class="text-white/80 mb-3" x-text="profile.email"></p>
+                                <div class="flex flex-wrap gap-2 justify-center md:justify-start">
+                                    <span class="px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-500/30 backdrop-blur-sm border border-white/30">
+                                        👤 Utilisateur
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Stats and Logout -->
+                            <div class="flex flex-col gap-3">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                                        <p class="text-2xl font-bold" x-text="profile.totalConnections"></p>
+                                        <p class="text-xs text-white/70">Connexions</p>
+                                    </div>
+                                    <div class="text-center bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+                                        <p class="text-2xl font-bold" x-text="profile.averageSuccess + '%'"></p>
+                                        <p class="text-xs text-white/70">Succès</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Logout Button -->
+                                <button 
+                                    @click="logout"
+                                    class="flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 rounded-lg transition-all font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                    </svg>
+                                    <span>Déconnexion</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        
+                        <!-- Personal Information (3/4) -->
+                        <div class="lg:col-span-3 bg-white rounded-xl shadow-lg p-6">
+                            <h4 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                Informations personnelles
+                            </h4>
+                            
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Nom</label>
+                                        <input 
+                                            type="text" 
+                                            x-model="profile.nom"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Prénom</label>
+                                        <input 
+                                            type="text" 
+                                            x-model="profile.prenom"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Email</label>
+                                        <input 
+                                            type="email" 
+                                            x-model="profile.email"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">Date d'enrôlement</label>
+                                        <input 
+                                            type="text" 
+                                            x-model="profile.enrollmentDate"
+                                            disabled
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                                    </div>
+                                </div>
+
+
+                                <div class="flex items-center space-x-4 pt-4">
+                                    <button 
+                                        @click="saveProfile"
+                                        class="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                                        </svg>
+                                        <span>Enregistrer</span>
+                                    </button>
+
+                                    <button 
+                                        @click="resetProfile"
+                                        class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-all">
+                                        Annuler
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Iris Image (1/4) -->
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h4 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Image d'iris
+                            </h4>
+
+                            <div class="space-y-4">
+                                <div class="relative aspect-square bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg overflow-hidden border-2 border-indigo-200">
+                                    <template x-if="profile.irisImageUrl">
+                                        <img :src="profile.irisImageUrl" alt="Iris" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!profile.irisImageUrl">
+                                        <div class="flex items-center justify-center h-full">
+                                            <div class="text-center">
+                                                <svg class="w-16 h-16 mx-auto mb-3 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                <p class="text-gray-500 text-sm">Image non disponible</p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
+                                    <p class="text-xs text-indigo-700 text-center">
+                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        Image protégée et non modifiable
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer" class="mt-auto"></div>
+
+    <script src="assets/js/main.js"></script>
+    <script>
+        function profileUserPage() {
+            return {
+                userId: null,
+                profile: {
+                    nom: '',
+                    prenom: '',
+                    email: '',
+                    enrollmentDate: 'Chargement...',
+                    totalConnections: 0,
+                    averageSuccess: 0,
+                    irisImageUrl: null
+                },
+                originalProfile: {},
+                
+                async init() {
+                    console.log('🔍 Initialisation page profil...');
+                    
+                    // Vérifier si l'utilisateur est connecté
+                    const userRole = localStorage.getItem('userRole');
+                    this.userId = localStorage.getItem('userId');
+                    
+                    if (userRole !== 'user' || !this.userId) {
+                        console.log('❌ Accès non autorisé');
+                        IrisAuth.showNotification('⚠️ Accès réservé aux utilisateurs', 'error');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                        return;
+                    }
+                    
+                    this.loadComponents();
+                    await this.loadUserData();
+                    this.originalProfile = JSON.parse(JSON.stringify(this.profile));
+                },
+                
+                loadComponents() {
+                    fetch('components/header-user.html')
+                        .then(r => r.text())
+                        .then(html => document.getElementById('header').innerHTML = html);
+
+                    fetch('components/footer.html')
+                        .then(r => r.text())
+                        .then(html => document.getElementById('footer').innerHTML = html);
+                },
+                
+                async loadUserData() {
+                    try {
+                        console.log('📥 Chargement des données utilisateur...');
+                        
+                        // Charger d'abord depuis localStorage
+                        this.profile.prenom = localStorage.getItem('userFirstName') || '';
+                        this.profile.nom = localStorage.getItem('userLastName') || '';
+                        this.profile.email = localStorage.getItem('userEmail') || '';
+                        
+                        // Charger les données complètes depuis l'API
+                        if (this.userId) {
+                            const response = await IrisAuth.apiGet(`/users/${this.userId}`);
+                            console.log('🌐 Réponse API complète:', response);
+                            console.log('🔍 Structure détaillée:', JSON.stringify(response, null, 2));
+                            
+                            let userData = response.user || response;
+                            
+                            if (userData) {
+                                this.profile.prenom = userData.prenom || this.profile.prenom;
+                                this.profile.nom = userData.nom || this.profile.nom;
+                                this.profile.email = userData.email || this.profile.email;
+                                
+                                // Date d'enrôlement - TESTER TOUS LES CHAMPS POSSIBLES
+                                const possibleDateFields = [
+                                    userData.dateEnrolement,
+                                    userData.date_enrolement, 
+                                    userData.dateInscription,
+                                    userData.date_inscription,
+                                    userData.createdAt,
+                                    userData.created_at,
+                                    userData.dateCreation,
+                                    userData.date_creation,
+                                    // Chercher dans donneesIris aussi
+                                    userData.donneesIris?.dateenrollement,
+                                    userData.donneesIris?.dateEnrollement,
+                                    userData.donneesIris?.date_enrollement,
+                                    userData.donnees_iris?.dateenrollement
+                                ];
+                                
+                                console.log('🗓️ Champs de date testés:', possibleDateFields);
+                                
+                                const dateStr = possibleDateFields.find(d => d != null);
+                                
+                                if (dateStr) {
+                                    console.log('✅ Date trouvée:', dateStr);
+                                    const date = new Date(dateStr);
+                                    this.profile.enrollmentDate = date.toLocaleDateString('fr-FR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                } else {
+                                    console.log('❌ Aucune date trouvée');
+                                    this.profile.enrollmentDate = 'Non disponible';
+                                }
+                                
+                                // Nombre de connexions
+                                this.profile.totalConnections = userData.totalConnections || userData.total_connections || 0;
+                                
+                                // Taux de succès moyen
+                                this.profile.averageSuccess = userData.averageSuccess || userData.average_success || 0;
+                                
+                                console.log('✅ Données utilisateur chargées:', this.profile);
+                            }
+                            
+                            // Charger l'image d'iris
+                            await this.loadIrisImage();
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Erreur chargement données:', error);
+                        this.profile.enrollmentDate = 'Erreur de chargement';
+                    }
+                },
+                
+                async loadIrisImage() {
+                    try {
+                        console.log('🖼️ Chargement de l\'image d\'iris...');
+                        
+                        // Récupérer l'image d'iris depuis l'API
+                        const irisResponse = await IrisAuth.apiGet(`/iris/user/${this.userId}`);
+                        console.log('🌐 Réponse iris complète:', irisResponse);
+                        console.log('🔍 Structure iris détaillée:', JSON.stringify(irisResponse, null, 2));
+                        
+                        // Gérer différents formats de réponse
+                        let irisData = null;
+                        
+                        if (irisResponse.iris) {
+                            irisData = irisResponse.iris;
+                        } else if (irisResponse.irisData) {
+                            irisData = irisResponse.irisData;
+                        } else if (irisResponse.data) {
+                            irisData = irisResponse.data;
+                        } else {
+                            irisData = irisResponse;
+                        }
+                        
+                        console.log('📦 irisData extraite:', irisData);
+                        
+                        if (irisData) {
+                            // Tester tous les champs possibles pour l'image
+                            const possiblePathFields = [
+                                irisData.cheminImage,
+                                irisData.chemin_image,
+                                irisData.imagePath,
+                                irisData.image_path,
+                                irisData.imageUrl,
+                                irisData.image_url,
+                                irisData.path,
+                                irisData.url
+                            ];
+                            
+                            const possibleBase64Fields = [
+                                irisData.imageBase64,
+                                irisData.image_base64,
+                                irisData.base64,
+                                irisData.imageData,
+                                irisData.image_data
+                            ];
+                            
+                            console.log('🔍 Champs path testés:', possiblePathFields);
+                            console.log('🔍 Champs base64 testés:', possibleBase64Fields);
+                            
+                            let imagePath = possiblePathFields.find(p => p != null);
+                            const base64 = possibleBase64Fields.find(b => b != null);
+                            
+                            if (imagePath) {
+                                console.log('✅ Chemin image trouvé:', imagePath);
+                                
+                                // Remplacer les backslashes par des slashes
+                                imagePath = imagePath.replace(/\\/g, '/');
+                                
+                                // Ajouter l'URL de base si nécessaire
+                                if (imagePath.startsWith('http')) {
+                                    this.profile.irisImageUrl = imagePath;
+                                } else {
+                                    this.profile.irisImageUrl = `http://localhost:8080/${imagePath.startsWith('/') ? imagePath.substring(1) : imagePath}`;
+                                }
+                                console.log('🖼️ URL finale:', this.profile.irisImageUrl);
+                            } else if (base64) {
+                                console.log('✅ Base64 trouvé (longueur):', base64.length);
+                                this.profile.irisImageUrl = `data:image/jpeg;base64,${base64}`;
+                            } else {
+                                console.log('❌ Aucun champ d\'image trouvé');
+                            }
+                        }
+                        
+                        if (this.profile.irisImageUrl) {
+                            console.log('✅ Image d\'iris chargée');
+                        } else {
+                            console.log('⚠️ Image d\'iris non disponible');
+                        }
+                    } catch (error) {
+                        console.log('⚠️ Erreur chargement image d\'iris:', error);
+                        this.profile.irisImageUrl = null;
+                    }
+                },
+                
+                getInitials() {
+                    if (!this.profile.prenom || !this.profile.nom) return '?';
+                    return `${this.profile.prenom.charAt(0)}${this.profile.nom.charAt(0)}`.toUpperCase();
+                },
+                
+                async saveProfile() {
+                    try {
+                        console.log('💾 Sauvegarde du profil...');
+                        
+                        // Validation
+                        if (!this.profile.nom || !this.profile.prenom || !this.profile.email) {
+                            IrisAuth.showNotification('⚠️ Veuillez remplir tous les champs', 'error');
+                            return;
+                        }
+                        
+                        // Validation email
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(this.profile.email)) {
+                            IrisAuth.showNotification('⚠️ Email invalide', 'error');
+                            return;
+                        }
+                        
+                        IrisAuth.showLoader('💾 Enregistrement en cours...');
+                        
+                        // Sauvegarder via l'API
+                        const updateData = {
+                            nom: this.profile.nom,
+                            prenom: this.profile.prenom,
+                            email: this.profile.email
+                        };
+                        
+                        const result = await IrisAuth.apiPut(`/users/${this.userId}`, updateData);
+                        
+                        IrisAuth.hideLoader();
+                        
+                        if (result.status === 'success' || result.success) {
+                            // Mettre à jour localStorage
+                            localStorage.setItem('userFirstName', this.profile.prenom);
+                            localStorage.setItem('userLastName', this.profile.nom);
+                            localStorage.setItem('userEmail', this.profile.email);
+                            
+                            this.originalProfile = JSON.parse(JSON.stringify(this.profile));
+                            
+                            IrisAuth.showNotification('✅ Profil enregistré avec succès !', 'success');
+                            
+                            console.log('✅ Profil sauvegardé');
+                        } else {
+                            throw new Error(result.message || 'Erreur lors de l\'enregistrement');
+                        }
+                        
+                    } catch (error) {
+                        IrisAuth.hideLoader();
+                        console.error('❌ Erreur sauvegarde:', error);
+                        IrisAuth.showNotification('❌ Erreur lors de l\'enregistrement', 'error');
+                    }
+                },
+                
+                resetProfile() {
+                    this.profile = JSON.parse(JSON.stringify(this.originalProfile));
+                    IrisAuth.showNotification('🔄 Modifications annulées', 'warning');
+                },
+                
+                logout() {
+                    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        window.location.href = 'index.html';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

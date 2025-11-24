@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IrisAuth - Base de données</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        .cell-scroll {
+            max-width: 203px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .cell-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+        .cell-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        .cell-scroll::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        .cell-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="irisRecordsPage()">
+    
+    <div class="flex flex-col min-h-screen">
+        <div id="header"></div>
+
+        <div class="flex flex-1">
+            <div id="sidebar"></div>
+
+            <main class="flex-1 p-6 max-w-[1400px] mx-auto w-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Liste des utilisateurs enrôlés</h2>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Delete Selected Button -->
+                        <button 
+                            x-show="selectedRecords.length > 0"
+                            @click="confirmDeleteSelected()"
+                            class="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            <span>Supprimer (<span x-text="selectedRecords.length"></span>)</span>
+                        </button>
+
+                        <!-- Total Records Card -->
+                        <div class="bg-white rounded-lg shadow px-5 py-3 flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">Total enregistrements</p>
+                                <p class="text-xl font-bold text-gray-800" x-text="irisRecords.length"></p>
+                            </div>
+                        </div>
+
+                        <!-- Search Bar -->
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                x-model="searchQuery"
+                                @input="filterRecords"
+                                placeholder="Rechercher..."
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-64">
+                            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Records Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 text-left">
+                                        <input 
+                                            type="checkbox" 
+                                            @change="toggleSelectAll($event)"
+                                            :checked="isAllSelected"
+                                            class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                    </th>
+                                    <th class="px-4 py-3 text-left cursor-pointer hover:bg-white/10" @click="sortBy('displayId')">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-semibold">N°</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left cursor-pointer hover:bg-white/10" @click="sortBy('nom')">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-semibold">Nom</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left cursor-pointer hover:bg-white/10" @click="sortBy('prenom')">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-semibold">Prénom</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left">
+                                        <span class="text-sm font-semibold">Email</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left cursor-pointer hover:bg-white/10" @click="sortBy('dateEnroll')">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-semibold">Date d'enrôlement</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left">
+                                        <span class="text-sm font-semibold">Image</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left">
+                                        <span class="text-sm font-semibold">Actions</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(record, index) in paginatedRecords" :key="record.id">
+                                    <tr class="border-b hover:bg-gray-50 transition-colors" :class="isSelected(record.id) ? 'bg-indigo-50' : ''">
+                                        <td class="px-4 py-0">
+                                            <input 
+                                                type="checkbox" 
+                                                :checked="isSelected(record.id)"
+                                                @change="toggleSelect(record.id)"
+                                                class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                        </td>
+                                        <td class="px-4 py-0 font-semibold text-indigo-600" x-text="formatDisplayId(record.displayId)"></td>
+                                        <td class="px-4 py-0 text-gray-800 font-medium">
+                                            <div class="cell-scroll" x-text="record.nom"></div>
+                                        </td>
+                                        <td class="px-4 py-0 text-gray-800 font-medium">
+                                            <div class="cell-scroll" x-text="record.prenom"></div>
+                                        </td>
+                                        <td class="px-4 py-0 text-gray-600 text-sm">
+                                            <div class="cell-scroll" x-text="record.email"></div>
+                                        </td>
+                                        <td class="px-4 py-0 text-gray-600 text-sm whitespace-nowrap max-w-[180px]" x-text="record.dateEnroll"></td>
+                                        <td class="px-4 py-0">
+                                            <template x-if="record.cheminImage">
+                                                <button 
+                                                    @click="viewImage(record.cheminImage)"
+                                                    class="group relative">
+                                                    <img 
+                                                        :src="getImageUrl(record.cheminImage)" 
+                                                        :alt="record.nom + ' iris'"
+                                                        class="w-12 h-12 rounded-lg object-cover border-2 border-gray-200 group-hover:border-indigo-500 transition-all cursor-pointer"
+                                                        @error="$event.target.src='https://via.placeholder.com/50?text=N/A'">
+                                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all flex items-center justify-center">
+                                                        <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                                        </svg>
+                                                    </div>
+                                                </button>
+                                            </template>
+                                            <template x-if="!record.cheminImage">
+                                                <span class="text-gray-400 text-xs">Aucune image</span>
+                                            </template>
+                                        </td>
+                                        <td class="px-4 py-0">
+                                            <div class="flex items-center space-x-2">
+                                                <button 
+                                                    @click="viewDetails(record)"
+                                                    class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="Voir les détails">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                </button>
+                                                <button 
+                                                    @click="confirmDelete(record)"
+                                                    class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Supprimer">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t">
+                        <p class="text-sm text-gray-600">
+                            Affichage de <span class="font-semibold" x-text="paginatedRecords.length"></span> sur <span class="font-semibold" x-text="filteredRecords.length"></span> enregistrement(s)
+                            <span x-show="selectedRecords.length > 0" class="ml-2 text-indigo-600">
+                                (<span x-text="selectedRecords.length"></span> sélectionné(s))
+                            </span>
+                        </p>
+                        <div class="flex items-center space-x-2">
+                            <button 
+                                @click="prevPage"
+                                :disabled="currentPage === 1"
+                                :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'"
+                                class="px-3 py-1 bg-white border border-gray-300 rounded-lg transition-colors text-sm">
+                                Précédent
+                            </button>
+                            
+                            <template x-for="page in totalPages" :key="page">
+                                <button 
+                                    @click="currentPage = page"
+                                    :class="currentPage === page ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-300 hover:bg-gray-50'"
+                                    class="px-3 py-1 rounded-lg text-sm transition-colors"
+                                    x-text="page">
+                                </button>
+                            </template>
+                            
+                            <button 
+                                @click="nextPage"
+                                :disabled="currentPage === totalPages"
+                                :class="currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'"
+                                class="px-3 py-1 bg-white border border-gray-300 rounded-lg transition-colors text-sm">
+                                Suivant
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="footer"></div>
+    </div>
+
+    <script src="assets/js/main.js"></script>
+    <script>
+function irisRecordsPage() {
+    return {
+        searchQuery: '',
+        sortColumn: 'displayId',
+        sortDirection: 'asc',
+        currentPage: 1,
+        itemsPerPage: 10,
+        irisRecords: [],
+        filteredRecords: [],
+        selectedRecords: [],
+        loading: true,
+        
+        async init() {
+            this.loadComponents();
+            await this.loadIrisRecords();
+        },
+        
+        loadComponents() {
+            fetch('components/header.html')
+                .then(r => r.text())
+                .then(html => document.getElementById('header').innerHTML = html);
+
+            fetch('components/footer.html')
+                .then(r => r.text())
+                .then(html => document.getElementById('footer').innerHTML = html);
+        },
+        
+        async loadIrisRecords() {
+            try {
+                this.loading = true;
+                
+                const response = await IrisAuth.apiGet('/iris/records');
+                
+                if (response.status === 'success') {
+                    this.irisRecords = response.records.map((record, index) => ({
+                        id: record.id,
+                        displayId: index + 1,
+                        userId: record.user.id,
+                        nom: record.user.nom,
+                        prenom: record.user.prenom,
+                        email: record.user.email,
+                        dateEnroll: this.formatDate(record.dateenrollement),
+                        codeIris: record.codeIris,
+                        cheminImage: record.cheminImage
+                    }));
+                    
+                    this.filteredRecords = [...this.irisRecords];
+                    this.selectedRecords = [];
+                } else {
+                    console.error('Erreur chargement données:', response.message);
+                }
+                
+                this.loading = false;
+                
+            } catch (error) {
+                console.error('Erreur chargement iris records:', error);
+                this.loading = false;
+                IrisAuth.showNotification('Erreur lors du chargement des données', 'error');
+            }
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }) + ' à ' + date.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+        
+        formatDisplayId(id) {
+            const totalRecords = this.irisRecords.length;
+            const digits = String(totalRecords).length;
+            return String(id).padStart(digits, '0');
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredRecords.length / this.itemsPerPage) || 1;
+        },
+        
+        get paginatedRecords() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredRecords.slice(start, end);
+        },
+        
+        get isAllSelected() {
+            return this.paginatedRecords.length > 0 && 
+                   this.paginatedRecords.every(record => this.selectedRecords.includes(record.id));
+        },
+        
+        filterRecords() {
+            this.filteredRecords = this.irisRecords.filter(record => {
+                const searchLower = this.searchQuery.toLowerCase();
+                return record.nom.toLowerCase().includes(searchLower) ||
+                       record.prenom.toLowerCase().includes(searchLower) ||
+                       record.email.toLowerCase().includes(searchLower);
+            });
+            this.currentPage = 1;
+            this.selectedRecords = [];
+        },
+        
+        sortBy(column) {
+            if (this.sortColumn === column) {
+                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortColumn = column;
+                this.sortDirection = 'asc';
+            }
+            
+            this.filteredRecords.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                if (this.sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+        },
+        
+        prevPage() {
+            if (this.currentPage > 1) {
+                this.currentPage--;
+            }
+        },
+        
+        nextPage() {
+            if (this.currentPage < this.totalPages) {
+                this.currentPage++;
+            }
+        },
+        
+        // Selection methods
+        isSelected(id) {
+            return this.selectedRecords.includes(id);
+        },
+        
+        toggleSelect(id) {
+            if (this.isSelected(id)) {
+                this.selectedRecords = this.selectedRecords.filter(r => r !== id);
+            } else {
+                this.selectedRecords.push(id);
+            }
+        },
+        
+        toggleSelectAll(event) {
+            if (event.target.checked) {
+                this.paginatedRecords.forEach(record => {
+                    if (!this.selectedRecords.includes(record.id)) {
+                        this.selectedRecords.push(record.id);
+                    }
+                });
+            } else {
+                const pageIds = this.paginatedRecords.map(r => r.id);
+                this.selectedRecords = this.selectedRecords.filter(id => !pageIds.includes(id));
+            }
+        },
+        
+        viewDetails(record) {
+            const details = `
+Détails de l'enrôlement:
+
+N°: ${this.formatDisplayId(record.displayId)}
+ID Base de données: ${record.id}
+ID Utilisateur: ${record.userId}
+Nom: ${record.nom}
+Prénom: ${record.prenom}
+Email: ${record.email}
+Date et heure d'enrôlement: ${record.dateEnroll}
+Code Iris: ${record.codeIris || 'N/A'}
+Chemin image: ${record.cheminImage || 'N/A'}
+            `.trim();
+            
+            alert(details);
+        },
+        
+        async confirmDelete(record) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer l'enrôlement iris de ${record.prenom} ${record.nom} ?\n\n⚠️ Cela supprimera également l'utilisateur associé.`)) {
+                await this.deleteRecord(record);
+            }
+        },
+        
+        async confirmDeleteSelected() {
+            const count = this.selectedRecords.length;
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${count} enregistrement(s) ?\n\n⚠️ Cela supprimera également les utilisateurs associés.`)) {
+                await this.deleteSelectedRecords();
+            }
+        },
+        
+        async deleteRecord(record) {
+            try {
+                const response = await IrisAuth.apiDelete(`/users/${record.userId}`);
+                
+                if (response.status === 'success') {
+                    await this.loadIrisRecords();
+                    IrisAuth.showNotification('Enregistrement supprimé avec succès', 'success');
+                } else {
+                    IrisAuth.showNotification('Erreur : ' + response.message, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erreur suppression:', error);
+                IrisAuth.showNotification('Erreur lors de la suppression', 'error');
+            }
+        },
+        
+        async deleteSelectedRecords() {
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const id of this.selectedRecords) {
+                    const record = this.irisRecords.find(r => r.id === id);
+                    if (record) {
+                        try {
+                            const response = await IrisAuth.apiDelete(`/users/${record.userId}`);
+                            if (response.status === 'success') {
+                                successCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        } catch (e) {
+                            errorCount++;
+                        }
+                    }
+                }
+                
+                await this.loadIrisRecords();
+                
+                if (errorCount === 0) {
+                    IrisAuth.showNotification(`${successCount} enregistrement(s) supprimé(s) avec succès`, 'success');
+                } else {
+                    IrisAuth.showNotification(`${successCount} supprimé(s), ${errorCount} erreur(s)`, 'warning');
+                }
+                
+            } catch (error) {
+                console.error('Erreur suppression multiple:', error);
+                IrisAuth.showNotification('Erreur lors de la suppression', 'error');
+            }
+        },
+
+        getImageUrl(cheminImage) {
+            if (!cheminImage) return '';
+            const fileName = cheminImage.split('\\').pop().split('/').pop();
+            return `http://localhost:8080/uploads/iris/${fileName}`;
+        },
+
+        viewImage(cheminImage) {
+            const imageUrl = this.getImageUrl(cheminImage);
+            
+            const newWindow = window.open('', '_blank', 'width=800,height=600');
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Image Iris</title>
+                    <style>
+                        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #000; }
+                        img { max-width: 90%; max-height: 90%; object-fit: contain; }
+                    </style>
+                </head>
+                <body>
+                    <img src="${imageUrl}" alt="Image Iris" />
+                </body>
+                </html>
+            `);
+        }
+    }
+}
+    </script>
+    <div id="add-user-modal"></div>
+    <script>
+        fetch('components/add-user-modal.html')
+            .then(r => r.text())
+            .then(html => document.getElementById('add-user-modal').innerHTML = html);
+    </script>
+</body>
+</html>

@@ -24,6 +24,25 @@ public class SecurityConfig {
 
                 // Configuration des autorisations
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ AJOUTER : Autoriser tous les fichiers statiques
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/login.html",
+                                "/register.html",
+                                "/dashboard-admin.html",
+                                "/iris-records.html",
+                                "/*.html",           // Tous les fichiers HTML à la racine
+                                "/css/**",
+                                "/js/**",
+                                "/assets/**",
+                                "/images/**",
+                                "/fonts/**",
+                                "/components/**",
+                                "/favicon.ico"
+                        ).permitAll()
+
+                        // Autoriser les endpoints API
                         .requestMatchers(
                                 "/api/auth/admin-login",
                                 "/api/auth/**",
@@ -34,6 +53,8 @@ public class SecurityConfig {
                                 "/api/admin/**",
                                 "/uploads/**"
                         ).permitAll()
+
+                        // Le reste nécessite une authentification
                         .anyRequest().authenticated()
                 );
 
@@ -51,7 +72,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:8000",
                 "http://127.0.0.1:8000",
+                "http://localhost:8080",
                 "http://localhost:3000",
+                "http://127.0.0.1:8080",
                 "http://127.0.0.1:3000",
                 "http://localhost:5500",
                 "http://127.0.0.1:5500"
@@ -71,9 +94,9 @@ public class SecurityConfig {
         // Durée du cache preflight (1 heure)
         configuration.setMaxAge(3600L);
 
-        // Appliquer cette config à toutes les routes /api/**
+        // ✅ MODIFIER : Appliquer CORS à TOUTES les routes (pas seulement /api/**)
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);  // Changé de /api/** à /**
 
         return source;
     }

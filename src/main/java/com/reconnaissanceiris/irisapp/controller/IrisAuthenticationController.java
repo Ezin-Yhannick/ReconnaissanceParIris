@@ -78,7 +78,7 @@ public class IrisAuthenticationController {
                 System.out.println("Similarité calculée: " + (similarity * 100) + "%");
 
                 // Seuil de correspondance : 85%
-                if (similarity > bestMatchScore && similarity >= 0.85) {
+                if (similarity > bestMatchScore && similarity >= 0.90) {
                     bestMatchScore = similarity;
                     matchedIris = irisRecord;
                 }

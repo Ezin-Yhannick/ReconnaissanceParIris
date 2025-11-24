@@ -6,7 +6,10 @@ import com.reconnaissanceiris.irisapp.repertoire.IrisRepository;
 import com.reconnaissanceiris.irisapp.repertoire.UsersRepository;
 import com.reconnaissanceiris.irisapp.service.IrisTraitementService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +46,7 @@ public class IrisEnrollController {
      * POST /api/iris/enroll
      */
     @PostMapping("/enroll")
+    @Transactional // IMPORTANT : Rollback automatique en cas d'erreur
     public ResponseEntity<Map<String, Object>> enrollUser(
             @RequestParam("nom") String nom,
             @RequestParam("prenom") String prenom,
@@ -51,6 +56,7 @@ public class IrisEnrollController {
             @RequestParam("irisImage") MultipartFile irisImage) {
 
         Map<String, Object> response = new HashMap<>();
+        File tempFile = null;
 
         try {
             // 1. Vérifier que l'email n'existe pas déjà
@@ -67,7 +73,47 @@ public class IrisEnrollController {
                 return ResponseEntity.status(400).body(response);
             }
 
-            // 3. Créer l'utilisateur
+            // 3. TRAITER L'IRIS EN PREMIER (avant de créer l'utilisateur)
+            tempFile = File.createTempFile("iris_enroll_", ".jpg");
+            irisImage.transferTo(tempFile);
+
+            System.out.println("📁 Fichier temporaire créé: " + tempFile.getAbsolutePath());
+            System.out.println("📏 Taille fichier: " + tempFile.length() + " bytes");
+            System.out.println("✅ Fichier existe: " + tempFile.exists());
+            System.out.println("📖 Fichier lisible: " + tempFile.canRead());
+
+            String codeIris;
+            try {
+                System.out.println("🔄 Début traitement iris...");
+                codeIris = irisTraitementService.TraiteIrisImage(tempFile);
+                System.out.println("✅ Traitement réussi!");
+            } catch (Exception e) {
+                System.err.println("❌ ERREUR TRAITEMENT: " + e.getMessage());
+                e.printStackTrace();
+                if (tempFile != null && tempFile.exists()) {
+                    tempFile.delete();
+                }
+                response.put("status", "error");
+                response.put("message", "Erreur lors du traitement de l'image d'iris: " + e.getMessage());
+                return ResponseEntity.status(400).body(response);
+            }
+
+            System.out.println("========== DEBUG ENROLEMENT ==========");
+            System.out.println("Code iris généré (premiers 50 chars): " + codeIris.substring(0, Math.min(50, codeIris.length())));
+            System.out.println("Longueur code: " + codeIris.length());
+            System.out.println("=======================================");
+
+            // 4. Vérifier si cet iris existe déjà dans la base
+            if (irisRepository.existsByCodeIris(codeIris)) {
+                if (tempFile != null && tempFile.exists()) {
+                    tempFile.delete();
+                }
+                response.put("status", "error");
+                response.put("message", "Cette image d'iris a déjà été enregistrée pour un autre utilisateur");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            }
+
+            // 5. CRÉER L'UTILISATEUR (seulement si l'iris est valide et unique)
             Users user = Users.builder()
                     .nom(nom)
                     .prenom(prenom)
@@ -77,20 +123,20 @@ public class IrisEnrollController {
                     .build();
 
             Users savedUser = usersRepository.save(user);
+            System.out.println("✅ Utilisateur créé avec ID: " + savedUser.getId());
 
-            // 4. Sauvegarder l'image sur le disque
-            String fileName = UUID.randomUUID().toString() + "_" + irisImage.getOriginalFilename();
-            String filePath = saveImageToFile(irisImage, fileName);
+            // 6. ✅ CORRECTION : Sauvegarder l'image depuis tempFile (au lieu de irisImage)
+            String fileName = UUID.randomUUID().toString() + "_" + prenom + "_" + nom + ".jpg";
+            String filePath = saveImageFromTempFile(tempFile, fileName);
+            System.out.println("✅ Image sauvegardée: " + filePath);
 
-            // 5. Traiter l'iris avec IrisTraitementService
-            String codeIris = processIrisImage(irisImage);
+            // Supprimer le fichier temporaire
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+                System.out.println("🗑️ Fichier temporaire supprimé");
+            }
 
-            System.out.println("========== DEBUG ENROLEMENT ==========");
-            System.out.println("Code iris généré (premiers 50 chars): " + codeIris.substring(0, Math.min(50, codeIris.length())));
-            System.out.println("Longueur code: " + codeIris.length());
-            System.out.println("=======================================");
-
-            // 6. Créer l'enregistrement iris
+            // 7. Créer l'enregistrement iris
             DonneesIris donneesIris = DonneesIris.builder()
                     .user(savedUser)
                     .cheminImage(filePath)
@@ -99,8 +145,9 @@ public class IrisEnrollController {
                     .build();
 
             DonneesIris savedIris = irisRepository.save(donneesIris);
+            System.out.println("✅ Iris enregistré avec ID: " + savedIris.getId());
 
-            // 7. Réponse succès
+            // 8. Réponse succès
             response.put("status", "success");
             response.put("message", "Utilisateur enrôlé avec succès");
             response.put("userId", savedUser.getId());
@@ -109,10 +156,25 @@ public class IrisEnrollController {
 
             return ResponseEntity.ok(response);
 
+        } catch (DataIntegrityViolationException e) {
+            // Erreur de contrainte unique (code_iris déjà existant)
+            System.err.println("❌ Erreur contrainte unique: " + e.getMessage());
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+            response.put("status", "error");
+            response.put("message", "Cette image d'iris a déjà été enregistrée pour un autre utilisateur");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+
         } catch (Exception e) {
+            // Nettoyage en cas d'erreur
+            System.err.println("❌ Erreur générale: " + e.getMessage());
+            e.printStackTrace();
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
             response.put("status", "error");
             response.put("message", "Erreur lors de l'enrôlement : " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(response);
         }
     }
@@ -172,8 +234,29 @@ public class IrisEnrollController {
     // ========== MÉTHODES UTILITAIRES ==========
 
     /**
-     * Sauvegarder l'image sur le disque
+     * Sauvegarder l'image depuis un fichier temporaire déjà existant
+     * ✅ NOUVELLE MÉTHODE CORRIGÉE
      */
+    private String saveImageFromTempFile(File tempFile, String fileName) throws IOException {
+        // Créer le dossier s'il n'existe pas
+        File uploadDir = new File(UPLOAD_DIR);
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+            System.out.println("📁 Dossier créé: " + uploadDir.getAbsolutePath());
+        }
+
+        // Copier le fichier temporaire vers le dossier permanent
+        Path targetPath = Paths.get(UPLOAD_DIR + fileName);
+        Files.copy(tempFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        return targetPath.toString();
+    }
+
+    /**
+     * Sauvegarder l'image sur le disque (ANCIENNE MÉTHODE - peut être supprimée)
+     * ⚠️ Cette méthode n'est plus utilisée mais je la laisse au cas où
+     */
+    @Deprecated
     private String saveImageToFile(MultipartFile file, String fileName) throws IOException {
         // Créer le dossier s'il n'existe pas
         File uploadDir = new File(UPLOAD_DIR);
@@ -186,23 +269,6 @@ public class IrisEnrollController {
         Files.write(filePath, file.getBytes());
 
         return filePath.toString();
-    }
-
-    /**
-     * Traiter l'image iris avec IrisTraitementService
-     */
-    private String processIrisImage(MultipartFile file) throws Exception {
-        // Sauvegarder temporairement le fichier
-        File tempFile = File.createTempFile("iris_enroll_", ".jpg");
-        file.transferTo(tempFile);
-
-        try {
-            // Utiliser le vrai service de traitement
-            return irisTraitementService.TraiteIrisImage(tempFile);
-        } finally {
-            // Supprimer le fichier temporaire
-            tempFile.delete();
-        }
     }
 
     /**
