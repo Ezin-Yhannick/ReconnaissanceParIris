@@ -1,71 +1,159 @@
 package com.reconnaissanceiris.irisapp.controller;
 
-import com.reconnaissanceiris.irisapp.config.JwtUtil;
-import com.reconnaissanceiris.irisapp.dto.AuthRequest;
-import com.reconnaissanceiris.irisapp.dto.AuthResponse;
-import com.reconnaissanceiris.irisapp.dto.RegisterRequest;
-import com.reconnaissanceiris.irisapp.model.Role;
 import com.reconnaissanceiris.irisapp.model.Users;
-import com.reconnaissanceiris.irisapp.service.UserService;
+import com.reconnaissanceiris.irisapp.repertoire.UsersRepository;
+import com.reconnaissanceiris.irisapp.service.AdminConfigService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-// L'IMPORT CLÉ DE SPRING SECURITY POUR LA GESTION DES ERREURS D'AUTHENTIFICATION
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-// Suppression des imports inutiles:
-// import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
-// import org.apache.tomcat.websocket.AuthenticationException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
 
-    private final UserService userService;
-    private final AuthenticationManager authenticationManager;
-    private  final JwtUtil jwtUtil;
-    private final BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    private UsersRepository usersRepository;
 
-    public AuthController(UserService userService, AuthenticationManager authenticationManager, JwtUtil jwtUtil, BCryptPasswordEncoder passwordEncoder) {
-        this.userService = userService;
-        this.authenticationManager = authenticationManager;
-        this.jwtUtil = jwtUtil;
-        this.passwordEncoder = passwordEncoder;
-    }
+    @Autowired
+    private AdminConfigService adminConfigService;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request){
-        if(userService.existsByEmail(request.email())){
-            return ResponseEntity.badRequest().body(new AuthResponse(null, "niii", "Email déjà utilisé"));
+    /**
+     * Connexion Admin avec identifiants depuis la base de données
+     * POST /api/auth/admin-login
+     */
+    @PostMapping("/admin-login")
+    public ResponseEntity<Map<String, Object>> adminLogin(@RequestBody Map<String, String> credentials) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String email = credentials.get("email");
+            String password = credentials.get("password");
+
+            if (email == null || password == null) {
+                response.put("success", false);
+                response.put("message", "Email et mot de passe requis");
+                return ResponseEntity.status(400).body(response);
+            }
+
+            // Vérifier avec la BD au lieu de application.properties
+            if (adminConfigService.verifyAdminCredentials(email, password)) {
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("email", email);
+                userData.put("nom", "Administrateur");
+                userData.put("prenom", "Système");
+                userData.put("role", "admin");
+
+                response.put("success", true);
+                response.put("message", "Connexion admin réussie");
+                response.put("user", userData);
+                response.put("token", "admin-token-" + System.currentTimeMillis());
+
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Email ou mot de passe incorrect");
+                return ResponseEntity.status(401).body(response);
+            }
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Erreur serveur : " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
-        Users user = Users.builder()
-                .email(request.email())
-                .nom(request.nom())
-                .prenom(request.prenom())
-                .mot_de_passe(passwordEncoder.encode(request.mot_de_passe()))
-                .role(Role.valueOf(request.role().toUpperCase()))
-                .build();
-        userService.saveUsers(user);
-
-        return ResponseEntity.ok(new AuthResponse(null, "Bearer", "Admin crée"));
     }
 
+    /**
+     * Connexion classique (email + mot de passe) - Pour les utilisateurs avec mot de passe
+     * POST /api/auth/login
+     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request){
-        try{
-            UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(request.email(),request.mot_de_passe());
-            // Si l'authentification échoue, une AuthenticationException de Spring Security est lancée.
-            authenticationManager.authenticate(token);
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credentials) {
+        Map<String, Object> response = new HashMap<>();
 
-            Users user = userService.findByEmail(request.email()).orElseThrow();
-            String jwt = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        try {
+            String email = credentials.get("email");
+            String password = credentials.get("password");
 
-            return ResponseEntity.ok(new AuthResponse(jwt, "Bearer", "Connexion OK"));
-        }catch (AuthenticationException e){ // <-- Capture l'exception de Spring Security
-            // Vous pouvez loguer e.getMessage() ici pour plus de détails
-            return ResponseEntity.status(401).body(new AuthResponse(null, "Bearer", "Identifiants invalides"));
+            if (email == null || password == null) {
+                response.put("success", false);
+                response.put("message", "Email et mot de passe requis");
+                return ResponseEntity.status(400).body(response);
+            }
+
+            // Chercher l'utilisateur par email
+            Users user = usersRepository.findByEmail(email).orElseThrow();
+
+            if (user == null) {
+                response.put("success", false);
+                response.put("message", "Email ou mot de passe incorrect");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            // Vérifier le mot de passe (ATTENTION: en prod, utiliser BCrypt)
+            if (!user.getMotDePasse().equals(password)) {
+                response.put("success", false);
+                response.put("message", "Email ou mot de passe incorrect");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            // Connexion réussie
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("email", user.getEmail());
+            userData.put("nom", user.getNom());
+            userData.put("prenom", user.getPrenom());
+            userData.put("role", user.getRole());
+
+            response.put("success", true);
+            response.put("message", "Connexion réussie");
+            response.put("user", userData);
+            response.put("token", "user-token-" + user.getId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Erreur serveur : " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
+    }
+
+    /**
+     * Vérifier si un email existe déjà
+     * GET /api/auth/check-email?email=xxx
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestParam String email) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean exists = usersRepository.existsByEmail(email);
+
+            response.put("exists", exists);
+            response.put("status", "success");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * Déconnexion (côté serveur)
+     * POST /api/auth/logout
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Déconnexion réussie");
+        return ResponseEntity.ok(response);
     }
 }

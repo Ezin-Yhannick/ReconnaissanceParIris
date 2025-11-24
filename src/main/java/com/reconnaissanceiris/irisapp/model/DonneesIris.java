@@ -2,10 +2,13 @@ package com.reconnaissanceiris.irisapp.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,20 +19,17 @@ public class DonneesIris {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Setter
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnoreProperties("donneesIris")
     private Users user;
 
-    @Setter
-    @Getter
-    @Lob
-    private String CodeIris;
+    @Column(name = "code_iris", columnDefinition = "LONGTEXT")
+    private String codeIris;
 
-    @Setter
-    private String CheminImage;
+    @Column(name = "chemin_image")
+    private String cheminImage;
 
-    @Setter
+    @Column(name = "dateenrollement")
     private LocalDateTime dateenrollement;
-
 }

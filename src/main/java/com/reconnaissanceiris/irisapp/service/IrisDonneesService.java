@@ -2,12 +2,8 @@ package com.reconnaissanceiris.irisapp.service;
 
 import com.reconnaissanceiris.irisapp.model.DonneesIris;
 import com.reconnaissanceiris.irisapp.model.Users;
-import org.apache.catalina.User;
-import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.util.Optional;
-
 
 public interface IrisDonneesService {
     /*
@@ -22,10 +18,9 @@ public interface IrisDonneesService {
     DonneesIris enrollIris(Users user, File irisImage) throws Exception;
 
     /*
-    *
-    * Rechercher les données l'iris liees a un utilisateur
-    * @param user l'utilisateur dont on veut les donnees de l'iris
-    * @return les donnees si elles existent
+     * Rechercher les données l'iris liees a un utilisateur
+     * @param userId l'ID de l'utilisateur dont on veut les donnees de l'iris
+     * @return les donnees si elles existent
      */
-    Optional<DonneesIris> findByUser(Users user);
+    Optional<DonneesIris> findByUserId(Long userId);
 }

@@ -36,8 +36,12 @@ public class IrisDonneesServiceImpl implements IrisDonneesService {
         return donneesIrisRepository.save(data);
     }
 
+    public DonneesIris getDonneesIrisByUser(Users user) {
+        return donneesIrisRepository.findByUserId(user.getId());
+    }
+
     @Override
-    public Optional<DonneesIris> findByUser(Users user) {
-        return donneesIrisRepository.findByUser(user);
+    public Optional<DonneesIris> findByUserId(Long userId) {
+        return Optional.ofNullable(donneesIrisRepository.findByUserId(userId));
     }
 }

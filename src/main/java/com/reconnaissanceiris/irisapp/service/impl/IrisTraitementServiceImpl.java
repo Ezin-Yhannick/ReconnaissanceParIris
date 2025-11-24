@@ -7,35 +7,40 @@ import ij.process.ImageProcessor;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.util.Random;
 
 @Service
 public class IrisTraitementServiceImpl implements IrisTraitementService {
 
-
     @Override
     public String TraiteIrisImage(File imageFile) throws Exception {
-        //Cette ligne permet de charger un image
+        // Charger l'image
         ImagePlus img = new ImagePlus(imageFile.getAbsolutePath());
 
-        //On verifie ici si elle est nulle
-        if(img == null || img.getProcessor() == null){
-            throw new IllegalArgumentException("Impossible de charger l'image :" + imageFile.getName());
+        if (img == null || img.getProcessor() == null) {
+            throw new IllegalArgumentException("Impossible de charger l'image : " + imageFile.getName());
         }
 
-        //Convertion en un Byte Processor pour pouvoir appliquer les filtres
-            ImageProcessor ip = img.getProcessor().convertToByteProcessor();
-            GaussianBlur gaussianBlur = new GaussianBlur();
-            gaussianBlur.blurGaussian(ip, 2.0);
+        // Conversion en ByteProcessor et application du filtre gaussien
+        ImageProcessor ip = img.getProcessor().convertToByteProcessor();
+        GaussianBlur gaussianBlur = new GaussianBlur();
+        gaussianBlur.blurGaussian(ip, 2.0);
 
-            //Simule un code binaire d'abord unique
-            StringBuilder code = new StringBuilder();
-            Random random = new Random();
+        // Générer un code basé sur les pixels de l'image (déterministe)
+        StringBuilder code = new StringBuilder();
 
-            for(int i = 0; i < 256; i++){
-                code.append(random.nextInt(2));
-            }
-            return code.toString();
+        int width = ip.getWidth();
+        int height = ip.getHeight();
+
+        // Échantillonner 256 points de l'image pour créer le code iris
+        for (int i = 0; i < 256; i++) {
+            int x = (i * width / 256) % width;
+            int y = (i * height / 256) % height;
+            int pixel = ip.getPixel(x, y);
+
+            // Convertir la valeur du pixel en bit (0 ou 1)
+            code.append(pixel > 127 ? "1" : "0");
+        }
+
+        return code.toString();
     }
 }
-

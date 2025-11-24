@@ -38,7 +38,7 @@ public class IrisComparateurController {
         user.setId(userId);
 
         // Charger irisCode existant
-        Optional<DonneesIris> data = irisDonneesService.findByUser(user);
+        Optional<DonneesIris> data = irisDonneesService.findByUserId(user.getId());
         if (data.isEmpty()) {
             return ResponseEntity.badRequest().body("Aucun iris enrôlé pour cet utilisateur");
         }

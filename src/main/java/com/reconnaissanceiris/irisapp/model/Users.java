@@ -2,12 +2,13 @@ package com.reconnaissanceiris.irisapp.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Builder
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "utilisateurs")
@@ -26,12 +27,15 @@ public class Users {
     @Column(nullable = true)
     private String prenom;
 
-    @Column(unique = true, nullable = false)
-    private String mot_de_passe;
+    @Column(name = "mot_de_passe", unique = true, nullable = false)
+    @JsonIgnore
+    private String motDePasse;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private String role;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("user")
+    private DonneesIris donneesIris;
 
 }
