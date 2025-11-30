@@ -664,6 +664,10 @@ function addUserModal() {
         cameraActive: false,
         videoStream: null,
 
+        processingStarted: false,
+        processingComplete: false,
+        isProcessing: false,
+
         openModal() {
             this.showModal = true;
             this.currentStep = 1;
@@ -682,6 +686,11 @@ function addUserModal() {
             this.uploadedFileName = '';
             this.scanMethod = 'upload';
             this.currentStep = 1;
+            
+            // ✅ AJOUTER CES LIGNES
+            this.processingStarted = false;
+            this.processingComplete = false;
+            this.isProcessing = false;
         },
 
         async validateUserData() {
@@ -824,6 +833,328 @@ function headerComponent() {
         }
     }
 }
+
+// ============================================
+// Fonction pour la modale de traitement d'iris
+// ============================================
+function irisProcessingModal() {
+    return {
+        showProcessingModal: false,
+        processingProgress: 0,
+        processingComplete: false,
+        totalProcessingTime: '0s',
+        processingSteps: [
+            {
+                name: 'Segmentation',
+                status: 'pending',
+                duration: '',
+                imageBefore: null,
+                imageAfter: null
+            },
+            {
+                name: 'Normalisation',
+                status: 'pending',
+                duration: '',
+                imageBefore: null,
+                imageAfter: null
+            },
+            {
+                name: 'Extraction',
+                status: 'pending',
+                duration: '',
+                imageBefore: null,
+                imageAfter: null
+            },
+            {
+                name: 'Encodage',
+                status: 'pending',
+                duration: '',
+                imageBefore: null,
+                imageAfter: null,
+                code: ''
+            }
+        ],
+        uploadedImageFile: null,
+        userDataForEnrollment: null,
+        isProcessing: false,
+        processingStarted: false,
+
+        /**
+         * Ouvrir la modale pour visualiser les étapes
+         */
+        openProcessingModal() {
+            this.showProcessingModal = true;
+        },
+
+        /**
+         * Démarrer le traitement (en arrière-plan)
+         */
+        async startProcessing(imageFile, userData) {
+            this.uploadedImageFile = imageFile;
+            this.userDataForEnrollment = userData;
+            this.isProcessing = true;
+            this.processingStarted = true;
+            this.resetProcessing();
+            
+            // Convertir l'image uploadée en dataURL pour l'afficher
+            const originalImageDataURL = await this.fileToDataURL(imageFile);
+            
+            await this.simulateProcessing(originalImageDataURL);
+            
+            this.isProcessing = false;
+            this.processingComplete = true;
+        },
+
+        /**
+         * Réinitialiser les données de traitement
+         */
+        resetProcessing() {
+            this.processingProgress = 0;
+            this.processingComplete = false;
+            this.totalProcessingTime = '0s';
+            this.processingSteps.forEach(step => {
+                step.status = 'pending';
+                step.duration = '';
+                step.imageBefore = null;
+                step.imageAfter = null;
+                if (step.code !== undefined) step.code = '';
+            });
+        },
+
+        /**
+         * Simuler le traitement des 4 étapes
+         */
+        async simulateProcessing(originalImage) {
+            const startTime = Date.now();
+
+            // Étape 1: Segmentation (Image originale → Image segmentée)
+            const segmentedImage = this.generateSegmentationImage();
+            await this.processStep(0, 1200, originalImage, segmentedImage);
+
+            // Étape 2: Normalisation (Image segmentée → Image normalisée)
+            const normalizedImage = this.generateNormalizationImage();
+            await this.processStep(1, 1000, segmentedImage, normalizedImage);
+
+            // Étape 3: Extraction (Image normalisée → Image avec caractéristiques)
+            const extractedImage = this.generateExtractionImage();
+            await this.processStep(2, 1500, normalizedImage, extractedImage);
+
+            // Étape 4: Encodage (Image extraite → Code binaire)
+            const irisCode = this.generateIrisCode();
+            await this.processStep(3, 800, extractedImage, null, irisCode);
+
+            // Terminé
+            const endTime = Date.now();
+            const totalSeconds = ((endTime - startTime) / 1000).toFixed(1);
+            this.totalProcessingTime = totalSeconds + 's';
+            this.processingProgress = 100;
+        },
+
+        /**
+         * Traiter une étape individuelle
+         */
+        async processStep(stepIndex, duration, imageBefore, imageAfter, code = null) {
+            this.processingSteps[stepIndex].status = 'processing';
+            this.processingSteps[stepIndex].imageBefore = imageBefore;
+
+            await this.delay(duration);
+
+            this.processingSteps[stepIndex].status = 'completed';
+            this.processingSteps[stepIndex].duration = (duration / 1000).toFixed(1) + 's';
+            
+            if (imageAfter) {
+                this.processingSteps[stepIndex].imageAfter = imageAfter;
+            }
+            
+            if (code) {
+                this.processingSteps[stepIndex].code = code;
+            }
+
+            this.processingProgress = ((stepIndex + 1) / 4) * 100;
+        },
+
+        /**
+         * Convertir un fichier en DataURL
+         */
+        fileToDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        },
+
+        /**
+         * Générer une image simulée de segmentation
+         */
+        generateSegmentationImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 400, 400);
+
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(200, 200, 120, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(200, 200, 50, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFFFFF';
+            for (let i = 0; i < 200; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 50 + Math.random() * 70;
+                const x = 200 + Math.cos(angle) * radius;
+                const y = 200 + Math.sin(angle) * radius;
+                ctx.fillRect(x, y, 2, 2);
+            }
+
+            return canvas.toDataURL('image/png');
+        },
+
+        /**
+         * Générer une image simulée de normalisation
+         */
+        generateNormalizationImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#2A2A2A';
+            ctx.fillRect(0, 0, 600, 200);
+
+            for (let i = 0; i < 20; i++) {
+                const y = i * 10;
+                ctx.strokeStyle = `rgba(${100 + Math.random() * 155}, ${100 + Math.random() * 155}, ${100 + Math.random() * 155}, 0.8)`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                
+                for (let x = 0; x < 600; x += 20) {
+                    const yOffset = Math.sin(x / 50 + i) * 5;
+                    ctx.lineTo(x, y + yOffset);
+                }
+                ctx.stroke();
+            }
+
+            return canvas.toDataURL('image/png');
+        },
+
+        /**
+         * Générer une image simulée d'extraction de caractéristiques
+         */
+        generateExtractionImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 600, 200);
+
+            for (let x = 0; x < 600; x += 15) {
+                const intensity = Math.random();
+                ctx.fillStyle = `rgba(0, ${Math.floor(200 * intensity)}, ${Math.floor(255 * intensity)}, ${0.5 + intensity * 0.5})`;
+                ctx.fillRect(x, 0, 10, 200);
+            }
+
+            ctx.fillStyle = '#FFFF00';
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * 600;
+                const y = Math.random() * 200;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return canvas.toDataURL('image/png');
+        },
+
+        /**
+         * Générer un code iris simulé (binaire)
+         */
+        generateIrisCode() {
+            let code = '';
+            for (let i = 0; i < 2048; i++) {
+                code += Math.random() > 0.5 ? '1' : '0';
+                if ((i + 1) % 64 === 0) code += '\n';
+            }
+            return code.substring(0, 512);
+        },
+
+        /**
+         * Fonction utilitaire pour ajouter un délai
+         */
+        delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        /**
+         * Finaliser l'enrôlement après traitement
+         */
+        async finalizeEnrollment() {
+            try {
+                showLoader('⏳ Finalisation de l\'enrôlement...');
+
+                const userData = this.userDataForEnrollment;
+                const result = await enrollUser(userData, this.uploadedImageFile);
+
+                hideLoader();
+
+                if (result.status === 'success') {
+                    const now = new Date();
+                    const enrollmentDate = now.toLocaleDateString('fr-FR', { 
+                        day: '2-digit', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    }) + ' à ' + now.toLocaleTimeString('fr-FR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    
+                    // Fermer la modale de traitement si ouverte
+                    this.closeProcessingModal();
+                    
+                    // Passer à l'étape 4 (succès) de la modale d'ajout
+                    this.currentStep = 4;
+                    this.userData.enrollmentDate = enrollmentDate;
+                    
+                    window.dispatchEvent(new CustomEvent('user-added', { 
+                        detail: { ...userData, enrollmentDate } 
+                    }));
+                    
+                    showNotification('✅ Utilisateur enrôlé avec succès !', 'success');
+                } else {
+                    showNotification('❌ ' + (result.message || 'Erreur lors de l\'enrôlement'), 'error');
+                }
+            } catch (error) {
+                hideLoader();
+                console.error('❌ Erreur finalisation:', error);
+                showNotification(error.message || '❌ Erreur lors de l\'enrôlement', 'error');
+            }
+        },
+
+        /**
+         * Fermer la modale de traitement
+         */
+        closeProcessingModal() {
+            this.showProcessingModal = false;
+            setTimeout(() => this.resetProcessing(), 300);
+        }
+    }
+}
+
+// Rendre la fonction disponible globalement
+window.irisProcessingModal = irisProcessingModal;
 
 // Rendre la fonction disponible globalement
 window.headerComponent = headerComponent;

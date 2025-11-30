@@ -94,7 +94,6 @@ public class SecurityConfig {
         // Durée du cache preflight (1 heure)
         configuration.setMaxAge(3600L);
 
-        // ✅ MODIFIER : Appliquer CORS à TOUTES les routes (pas seulement /api/**)
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);  // Changé de /api/** à /**
 
